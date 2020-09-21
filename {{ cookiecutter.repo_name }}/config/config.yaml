@@ -1,0 +1,14 @@
+---
+c_seed: 
+c_dataset: &d_name 
+c_data:
+    prefix: &d_prefix data 
+    raw: &d_raw !join [*d_prefix, raw]
+    processed: &d_processed !join [*d_prefix, processed, *d_name]
+    interim: !join [*d_prefix, interim, *d_name]
+c_model:
+    prefix: &m_prefix models
+    save: !join [*m_prefix, *d_name]
+c_results:
+    prefix: experiments
+    timestamp: yes

@@ -1,45 +1,40 @@
 import argparse
 import logging
 import logging.config
+import yaml
 
-from test.test import run_tests
-from src.score_model import run_scoring
-from src.generate_features import run_features
-from src.train_model import run_training
+from src.run_experiment import ex
+from src.preprocess_experiment import get_dataset
+from src.preprocess_experiment import preprocess
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    logging.config.fileConfig("config/logging/local.conf")
+    logging.config.fileConfig("config/logging_local.conf")
     logger = logging.getLogger("run")
     parser = argparse.ArgumentParser(description="Run components of the model source code")
     subparsers = parser.add_subparsers()
 
-    # FEATURE subparser
-    sb_features = subparsers.add_parser("generate_features", description="Generate features")
-    sb_features.add_argument('--config', help='path to yaml file with configurations')
-    sb_features.add_argument('--csv', default=None, help="Path to CSV for input to model scoreing")
-    sb_features.add_argument('--save', default=None, help='Path to where the dataset should be saved to (optional')
-    sb_features.set_defaults(func=run_features)
+    # data subparser
+    sb_data = subparsers.add_parser("get_data", description="Downloads the raw data")
+    sb_data.add_argument("--config", default="config/config.yaml", help="Config file")
+    sb_data.set_defaults(func=get_dataset)
 
-    # TRAIN subparser
+    # preprocess subparser
+    sb_preprocess = subparsers.add_parser("preprocess_data", description="Preprocesses raw data")
+    sb_preprocess.add_argument("--config", default="config/config.yaml", help="Config file")
+    sb_preprocess.set_defaults(func=preprocess)
+
+    # train subparser
     sb_train = subparsers.add_parser("train_model", description="Train model")
-    sb_train.add_argument('--config', help='path to yaml file with configurations')
-    sb_train.add_argument('--csv', default=None, help="Path to CSV for input to model training")
-    sb_train.add_argument('--save', default=None, help='Path to where the dataset should be saved to (optional')
-    sb_train.set_defaults(func=run_training)
-
-    # SCORE subparser
-    sb_score = subparsers.add_parser("score_model", description="Score model")
-    sb_score.add_argument('--config', help='path to yaml file with configurations')
-    sb_score.add_argument('--csv', default=None, help="Path to CSV for input to model scoring")
-    sb_score.add_argument('--save', default=None, help='Path to where the dataset should be saved to (optional')
-    sb_score.set_defaults(func=run_scoring)
-
-    # TEST subparser
-    sb_test = subparsers.add_parser("test", description="Test whether the expected outputs are produced")
-    sb_test.add_argument("--path", default="test/test_config.yml", help="Path to the test configuration file")
-    sb_test.set_defaults(func=run_tests)
+    sb_train.add_argument("--config", default="config/config.yaml", help="Config file")
+    sb_train.add_argument("--command", default="my_main", help="Function to run")
+    sb_train.set_defaults(func=ex.run)
 
     args = parser.parse_args()
-    args.func(args)
+
+    if args.func == ex.run:
+        ex.add_config(args.config)
+        run = ex.run(command_name=args.command)
+    else:
+        args.func(args)
