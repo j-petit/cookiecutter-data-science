@@ -9,6 +9,7 @@ import yaml
 
 from src.utils import load_config
 
+
 def get_dataset(args):
     """Downloads the dataset if it is not yet available and unzips it
 
