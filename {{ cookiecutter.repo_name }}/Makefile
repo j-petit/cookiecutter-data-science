@@ -18,11 +18,6 @@ endif
 # COMMANDS                                                                      #
 #################################################################################
 
-
-## Make Dataset
-data:
-	$(PYTHON_INTERPRETER) src/data/make_dataset.py data/raw data/processed
-
 ## Delete all compiled Python files
 clean:
 	find . -type f -name "*.py[co]" -delete
@@ -31,15 +26,6 @@ clean:
 ## Lint using flake8
 format:
 	black .
-
-
-## Set up python interpreter environment
-create_environment:
-ifeq (True,$(HAS_CONDA))
-		@echo ">>> Detected conda, creating conda environment."
-	conda create --name $(PROJECT_NAME) python=3
-		@echo ">>> New conda env created. Activate with:\nsource activate $(PROJECT_NAME)"
-endif
 
 ## Test python environment is setup correctly
 test_environment:
