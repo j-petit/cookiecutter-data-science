@@ -21,7 +21,7 @@ URI = "mongodb://{}:{}@139.18.13.64/?authSource={{cookiecutter.repo_name}}&authM
 )
 
 ex = Experiment("{{cookiecutter.repo_name}}")
-ex.observers.append(MongoObserver(url=URI, db_name="{{cookiecutter.repo_name"))
+ex.observers.append(MongoObserver(url=URI, db_name="{{cookiecutter.repo_name}}"))
 ex.logger = logging.getLogger("{{cookiecutter.repo_name}}")
 config = load_config("config/config.yaml")
 ex.add_config(config)
