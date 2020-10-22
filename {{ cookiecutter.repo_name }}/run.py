@@ -17,7 +17,7 @@ from sacred.observers import MongoObserver
 from src.utils import config_adapt
 
 
-ex = sacred.Experiment("{{ cookiecutter.repo_name")
+ex = sacred.Experiment("{{ cookiecutter.repo_name }}")
 ex.add_config(yaml.load("config/config.yaml", yaml.SafeLoader))
 
 
