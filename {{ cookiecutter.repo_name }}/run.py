@@ -1,40 +1,102 @@
-import argparse
 import logging
+import pdb
 import logging.config
 import yaml
+import sacred
+import pprint
+import os
+from datetime import datetime
+import dotenv
+import multiprocessing
+import pandas as pd
+import pathpy
 
-from src.run_experiment import ex
-from src.preprocess_experiment import get_dataset
-from src.preprocess_experiment import preprocess
+from sacred import Experiment
+from sacred.observers import MongoObserver
+
+from src.utils import config_adapt
 
 
-if __name__ == "__main__":
+ex = sacred.Experiment("{{ cookiecutter.repo_name")
+ex.add_config(yaml.load("config/config.yaml", yaml.SafeLoader))
 
-    logging.config.fileConfig("config/logging_local.conf")
-    logger = logging.getLogger("run")
-    parser = argparse.ArgumentParser(description="Run components of the model source code")
-    subparsers = parser.add_subparsers()
 
-    # data subparser
-    sb_data = subparsers.add_parser("get_data", description="Downloads the raw data")
-    sb_data.add_argument("--config", default="config/config.yaml", help="Config file")
-    sb_data.set_defaults(func=get_dataset)
+dotenv.load_dotenv(".env")
+URI = "mongodb://{}:{}@139.18.13.64/?authSource=hids&authMechanism=SCRAM-SHA-1".format(
+    os.environ["SACRED_MONGODB_USER"], os.environ["SACRED_MONGODB_PWD"]
+)
+ex.observers.append(MongoObserver(url=URI, db_name="hids"))
 
-    # preprocess subparser
-    sb_preprocess = subparsers.add_parser("preprocess_data", description="Preprocesses raw data")
-    sb_preprocess.add_argument("--config", default="config/config.yaml", help="Config file")
-    sb_preprocess.set_defaults(func=preprocess)
 
-    # train subparser
-    sb_train = subparsers.add_parser("train_model", description="Train model")
-    sb_train.add_argument("--config", default="config/config.yaml", help="Config file")
-    sb_train.add_argument("--command", default="my_main", help="Function to run")
-    sb_train.set_defaults(func=ex.run)
+@ex.command(unobserved=True)
+def print_config(_config):
+    """ Replaces print_config which is not working with python 3.8 and current packages sacred"""
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(_config)
 
-    args = parser.parse_args()
 
-    if args.func == ex.run:
-        ex.add_config(args.config)
-        run = ex.run(command_name=args.command)
-    else:
-        args.func(args)
+@ex.config
+def config(c_data, c_dataset, c_results, c_model):
+
+    c_data["raw"] = os.path.join(c_data["prefix"], "raw", c_dataset)
+    c_data["processed"] = os.path.join(c_data["prefix"], "processed", c_dataset)
+    c_data["interim"] = os.path.join(c_data["prefix"], "interim", c_dataset)
+
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    c_results["output_path"] = os.path.join(c_results["prefix"], c_dataset, timestamp)
+
+
+@ex.config_hook
+def hook(config, command_name, logger):
+
+    config.update({"hook": True})
+
+    pd.set_option("display.max_columns", 500)
+    pd.set_option("display.max_rows", None)
+    pd.options.display.width = 0
+
+    os.makedirs(config["c_results"]["output_path"], exist_ok=True)
+    os.makedirs(config["c_data"]["processed"], exist_ok=True)
+    os.makedirs(config["c_data"]["interim"], exist_ok=True)
+    os.makedirs(os.path.dirname(config["c_model"]["save"]), exist_ok=True)
+
+    # logging.config.fileConfig("config/logging_local.conf")
+    log_config = yaml.load(open("config/logging.yaml", "r"), yaml.SafeLoader)
+
+    for handler in log_config["handlers"].values():
+        if "filename" in handler.keys():
+            handler["filename"] = os.path.join(
+                config["c_results"]["output_path"], handler["filename"]
+            )
+
+    logging.config.dictConfig(log_config)
+
+    return config
+
+
+@ex.automain
+def run(hook, _config, c_stages, c_results, _run):
+
+    logger = logging.getLogger("{{ cookiecutter.repo_name }}." + os.path.basename(os.path.splitext(__file__)[0]))
+    logger.info(_config["timestamp"])
+
+    min_likelihood = None
+
+    if c_stages["pull_data"]:
+        src.get_data.get_dataset(_config)
+    if c_stages["analyze"]:
+        src.ex_analyze_data.analyze(_config)
+        ex.add_artifact(os.path.join(c_results["output_path"], "analyze.log"))
+    if c_stages["make_temp_paths"]:
+        src.preprocess_experiment.preprocess(_config)
+        ex.add_artifact(os.path.join(c_results["output_path"], "preprocess.log"))
+    if c_stages["create_model"]:
+        min_likelihood = src.ex_create_model.create_model(_config, _run)
+        ex.add_artifact(os.path.join(c_results["output_path"], "preprocess.log"))
+    if c_stages["simulate"]:
+        src.run_experiment.my_main(_config, _run, min_likelihood)
+        ex.add_artifact(os.path.join(c_results["output_path"], "results.log"))
+        ex.add_artifact(os.path.join(c_results["output_path"], "results.csv"))
+
+    ex.add_artifact(os.path.join(c_results["output_path"], "general.log"))
