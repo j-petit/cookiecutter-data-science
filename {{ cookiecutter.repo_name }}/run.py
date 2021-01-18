@@ -7,6 +7,7 @@ import pprint
 import os
 from datetime import datetime
 import dotenv
+import pandas as pd
 
 from sacred import Experiment
 from sacred.observers import MongoObserver
@@ -19,7 +20,7 @@ ex.add_config(yaml.load("config/config.yaml", yaml.SafeLoader))
 
 
 dotenv.load_dotenv(".env")
-URI = "mongodb://{}:{}@139.18.13.64/?authSource=ogb_citation&authMechanism=SCRAM-SHA-1".format(
+URI = "mongodb://{}:{}@172.26.44.33/?authSource=ogb_citation&authMechanism=SCRAM-SHA-1".format(
     os.environ["SACRED_MONGODB_USER"], os.environ["SACRED_MONGODB_PWD"]
 )
 ex.observers.append(MongoObserver(url=URI, db_name="ogb_citation"))
@@ -56,7 +57,6 @@ def hook(config, command_name, logger):
     os.makedirs(config["c_results"]["output_path"], exist_ok=True)
     os.makedirs(config["c_data"]["processed"], exist_ok=True)
     os.makedirs(config["c_data"]["interim"], exist_ok=True)
-    os.makedirs(os.path.dirname(config["c_model"]["save"]), exist_ok=True)
 
     log_config = yaml.load(open("config/logging.yaml", "r"), yaml.SafeLoader)
 
