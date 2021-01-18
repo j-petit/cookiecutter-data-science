@@ -1,13 +1,11 @@
 ---
-seed: 3
-stages:
+c_seed: 3
+c_stages:
     main: True
-dataset:
-data:
+c_dataset:
+c_data:
     prefix: data
-model:
+c_model:
     prefix: models
-results:
+c_results:
     prefix: experiments
-analyze:
-    figures: reports/figures

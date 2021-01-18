@@ -19,10 +19,10 @@ ex.add_config(yaml.load("config/config.yaml", yaml.SafeLoader))
 
 
 dotenv.load_dotenv(".env")
-URI = "mongodb://{}:{}@139.18.13.64/?authSource=hids&authMechanism=SCRAM-SHA-1".format(
+URI = "mongodb://{}:{}@139.18.13.64/?authSource=ogb_citation&authMechanism=SCRAM-SHA-1".format(
     os.environ["SACRED_MONGODB_USER"], os.environ["SACRED_MONGODB_PWD"]
 )
-ex.observers.append(MongoObserver(url=URI, db_name="hids"))
+ex.observers.append(MongoObserver(url=URI, db_name="ogb_citation"))
 
 
 @ex.command(unobserved=True)
@@ -41,7 +41,7 @@ def config(c_data, c_dataset, c_results, c_model):
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    c_results["output_path"] = os.path.join(c_results["prefix"], c_dataset, timestamp)
+    c_results["output_path"] = os.path.join(c_results["prefix"], timestamp)
 
 
 @ex.config_hook
@@ -58,7 +58,6 @@ def hook(config, command_name, logger):
     os.makedirs(config["c_data"]["interim"], exist_ok=True)
     os.makedirs(os.path.dirname(config["c_model"]["save"]), exist_ok=True)
 
-    # logging.config.fileConfig("config/logging_local.conf")
     log_config = yaml.load(open("config/logging.yaml", "r"), yaml.SafeLoader)
 
     for handler in log_config["handlers"].values():

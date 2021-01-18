@@ -26,6 +26,10 @@ sync_cluster:
 sync_local:
 	rsync -r ja952kire@login01.sc.uni-leipzig.de:experiments/$(PROJECT_NAME)/ $(PROJECT_DIR)
 
+## Clean all local experiments artefacts etc.
+clean_exp:
+	rm -rf experiments/*
+
 ## Delete all compiled Python files
 clean:
 	find . -type f -name "*.py[co]" -delete
