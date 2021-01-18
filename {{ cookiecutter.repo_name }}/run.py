@@ -7,14 +7,11 @@ import pprint
 import os
 from datetime import datetime
 import dotenv
-import multiprocessing
-import pandas as pd
-import pathpy
 
 from sacred import Experiment
 from sacred.observers import MongoObserver
 
-from src.utils import config_adapt
+from src.main import main
 
 
 ex = sacred.Experiment("{{ cookiecutter.repo_name }}")
@@ -78,25 +75,12 @@ def hook(config, command_name, logger):
 @ex.automain
 def run(hook, _config, c_stages, c_results, _run):
 
-    logger = logging.getLogger("{{ cookiecutter.repo_name }}." + os.path.basename(os.path.splitext(__file__)[0]))
+    logger = logging.getLogger(
+        "{{ cookiecutter.repo_name }}." + os.path.basename(os.path.splitext(__file__)[0])
+    )
     logger.info(_config["timestamp"])
 
-    min_likelihood = None
-
-    if c_stages["pull_data"]:
-        src.get_data.get_dataset(_config)
-    if c_stages["analyze"]:
-        src.ex_analyze_data.analyze(_config)
-        ex.add_artifact(os.path.join(c_results["output_path"], "analyze.log"))
-    if c_stages["make_temp_paths"]:
-        src.preprocess_experiment.preprocess(_config)
-        ex.add_artifact(os.path.join(c_results["output_path"], "preprocess.log"))
-    if c_stages["create_model"]:
-        min_likelihood = src.ex_create_model.create_model(_config, _run)
-        ex.add_artifact(os.path.join(c_results["output_path"], "preprocess.log"))
-    if c_stages["simulate"]:
-        src.run_experiment.my_main(_config, _run, min_likelihood)
-        ex.add_artifact(os.path.join(c_results["output_path"], "results.log"))
-        ex.add_artifact(os.path.join(c_results["output_path"], "results.csv"))
+    if c_stages["main"]:
+        main(_config)
 
     ex.add_artifact(os.path.join(c_results["output_path"], "general.log"))

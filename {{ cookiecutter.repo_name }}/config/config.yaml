@@ -1,6 +1,7 @@
 ---
 seed: 3
 stages:
+    main: True
 dataset:
 data:
     prefix: data

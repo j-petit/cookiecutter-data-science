@@ -1,4 +1,4 @@
-.PHONY: clean data format
+.PHONY: clean format sync_cluster sync_local
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -17,6 +17,14 @@ endif
 #################################################################################
 # COMMANDS                                                                      #
 #################################################################################
+
+## Clone to cluster
+sync_cluster:
+	rsync -r $(PROJECT_DIR) ja952kire@login01.sc.uni-leipzig.de:experiments/
+
+## Clone to local
+sync_local:
+	rsync -r ja952kire@login01.sc.uni-leipzig.de:experiments/$(PROJECT_NAME)/ $(PROJECT_DIR)
 
 ## Delete all compiled Python files
 clean:
